@@ -1,0 +1,97 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+	<title>날씨</title>
+	<meta charset="UTF-8" />
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+	<style>
+		body {
+			color: #777;
+			background-color: #FFF;
+		}
+		#icon{
+			float: left;
+			font-family: Veranda;
+		}
+		p{
+			float:left;
+			padding: 5px;
+		}
+	</style>
+</head>
+
+<body>
+	<script>
+	
+		var HOME_PATH = window.HOME_PATH || 'https://openweathermap.org/img/w';
+		var url;
+		var userLat;
+		var userLon;
+	function onSuccess(position) {
+		userLat = position.coords.latitude;
+		userLon = position.coords.longitude;
+		url = "https://api.openweathermap.org/data/2.5/weather?lat=" + position.coords.latitude+"&lon=" +position.coords.longitude+ "&cnt=7&APPID=9e44eafe99830dbb2bf44b54541d339d&units=metric";
+		loadJSON(function(response) 
+		{
+			var jsonData = JSON.parse(response);
+			var lat = Number(jsonData["coord"]["lat"]);
+			var lon = Number(jsonData["coord"]["lon"]);
+			//document.getElementById("lat").innerHTML = "위도: " + jsonData["coord"]["lat"] + "&deg;";
+			//document.getElementById("lon").innerHTML = "경도: " + jsonData["coord"]["lon"] + "&deg;";
+			document.getElementById("locationName").innerHTML = "지역명: " + jsonData["name"];
+			//document.getElementById("todaysWeather").innerHTML = "날씨: " + jsonData["weather"][0]["main"];
+			//document.getElementById("cloudiness").innerHTML = "흐린정도: " + jsonData["clouds"]["all"] + "%";
+			document.getElementById("temperature").innerHTML = "기온: " + jsonData["main"]["temp"] +"&deg;C";
+			document.getElementById("humidity").innerHTML = "습도: " + jsonData["main"]["humidity"] + "%";
+			document.getElementById("icon").src = 'https://openweathermap.org/img/w/' + jsonData["weather"][0]["icon"] + '.png';
+		});
+	}
+	function onFailed(error) {
+		var center = map.getCenter();
+		infowindow.setContent('<div style="padding:20px;">' +
+			'<h5 style="margin-bottom:5px;color:#f00;">Geolocation failed!</h5>'+ "latitude: "+ center.lat() +"<br />longitude: "+ center.lng() +'</div>');
+		infowindow.open(map, center);
+		alert("error"+e.code)
+	}
+				
+	var options = {
+		enableHighAccuracy : true,
+		maximumAge : 50000,
+		timeout : 5000
+	}
+	function parseWeather() 
+	{ 	
+		if (navigator.geolocation) { // GPS를 지원하면
+			navigator.geolocation.getCurrentPosition(onSuccess,onFailed ,options);
+		} else {
+			alert('GPS를 지원하지 않습니다');
+		}
+	}
+	function loadJSON(callback) //url의 json 데이터 불러오는 함수
+	{   
+		var request = new XMLHttpRequest();
+		request.open('GET', url, true);
+		request.onreadystatechange = function (){
+			if (request.readyState == 4 && request.status == "200") 
+			{
+				callback(request.responseText);
+			}
+		};
+		request.send(null);  
+	} 
+	window.onload = function(){
+		parseWeather();
+	}
+    </script>
+		<!-- <p id= "lat"></p> -->
+		<!-- <p id ="lon"></p> -->
+		<img id="icon" src="" width="50" height="50"/>
+		<p id ="locationName"></p>
+		<!-- <p id ="todaysWeather"></p> -->
+		<!-- <p id ="cloudiness"></p> -->
+		<p id ="temperature"></p>
+		<p id ="humidity"></p>
+		
+</body>
+</html>
