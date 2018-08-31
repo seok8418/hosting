@@ -1,0 +1,158 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+	<title>날씨 지도 </title>
+	<meta charset="UTF-8" />
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+	<script type="text/javascript" src="https://openapi.map.naver.com/openapi/v3/maps.js?clientId=T5BdEDNEsCCoZuuizjqq&submodules=geocoder"></script>
+</head>
+
+<body>
+	<div id="map" style="width:100%;height:500px;"></div>
+	<script>
+	
+		var HOME_PATH = window.HOME_PATH || 'https://openweathermap.org/img/w';
+		var position = new naver.maps.LatLng(36.1444292, 128.391079);
+		var map = new naver.maps.Map('map', {
+			center: position,
+			mapTypeControl: true,
+			mapTypeControlOptions: {
+				style: naver.maps.MapTypeControlStyle.DROPDOWN
+			}
+		});
+		var menuLayer = $('<div style="position:absolute;z-index:10000;background-color:#fff;border:solid 1px #333;padding:10px;display:none;"></div>');
+		map.getPanes().floatPane.appendChild(menuLayer[0]);
+		var url;
+		var locationArray = ["Seoul", "Chuncheon", "Daejeon", "Cheongju", "Daegu", "Kumi", "Gwangju", "Jeonju", "Busan", "Jeju", "Wonju", "Cheongju" ]
+		function parseWeather() 
+		{ 	
+			for(var i in locationArray){
+				url = "https://api.openweathermap.org/data/2.5/weather?q=" + locationArray[i] + ",KR&cnt=7&APPID=9e44eafe99830dbb2bf44b54541d339d&units=metric";
+				loadJSON(function(response) 
+				{
+					var jsonData = JSON.parse(response);
+					var lat = Number(jsonData["coord"]["lat"]);
+					var lon = Number(jsonData["coord"]["lon"]);
+					var position = new naver.maps.LatLng(lat, lon);
+					var markerOptions = {
+						position: position.destinationPoint(90, 15),
+						map: map,
+						icon: {
+							url: HOME_PATH + "/"+ jsonData["weather"][0]["icon"] +".png",
+							size: new naver.maps.Size(500, 500),
+							origin: new naver.maps.Point(0, 0),
+							anchor: new naver.maps.Point(25, 26)
+						}
+					};
+					
+					var marker = new naver.maps.Marker(markerOptions);
+					document.getElementById("lat").innerHTML = "위도: " + jsonData["coord"]["lat"] + "&deg;";
+					document.getElementById("lon").innerHTML = "경도: " + jsonData["coord"]["lon"] + "&deg;";
+					document.getElementById("locationName").innerHTML = "지역명: " + jsonData["name"];
+					document.getElementById("todaysWeather").innerHTML = "날씨: " + jsonData["weather"][0]["main"];
+					document.getElementById("cloudiness").innerHTML = "흐린정도: " + jsonData["clouds"]["all"] + "%";
+					document.getElementById("temperature").innerHTML = "기온: " + jsonData["main"]["temp"] +"&deg;C";
+					document.getElementById("humidity").innerHTML = "습도: " + jsonData["main"]["humidity"] + "%";
+					document.getElementById("rainVolume").innerHTML = "3시간동안 내린 비: " + jsonData["rain"]["3h"];
+					document.getElementById("snowVolume").innerHTML = "3시간동안 내린 눈: " + jsonData["snow"]["3h"];
+					document.getElementById("icon").innerHTML = jsonData["weather"][0]["icon"];	
+				});
+			
+			}
+
+		}
+		
+	    function loadJSON(callback) //url의 json 데이터 불러오는 함수
+	    {   
+			var request = new XMLHttpRequest();
+			request.open('GET', url, true);
+			request.onreadystatechange = function (){
+				if (request.readyState == 4 && request.status == "200") 
+				{
+				  callback(request.responseText);
+				}
+			};
+			request.send(null);  
+		} 
+		window.onload = function(){
+			parseWeather();
+		}
+		var bicycleLayer = new naver.maps.BicycleLayer();
+
+		var btn = $('#bicycle');
+
+		naver.maps.Event.addListener(map, 'bicycleLayer_changed', function(bicycleLayer) {
+			if (bicycleLayer) {
+				btn.addClass('control-on');
+			} else {
+				btn.removeClass('control-on');
+			}
+		});
+
+		bicycleLayer.setMap(map);
+
+		btn.on("click", function(e) {
+			e.preventDefault();
+
+			if (bicycleLayer.getMap()) {
+				bicycleLayer.setMap(null);
+			} else {
+				bicycleLayer.setMap(map);
+			}
+		});
+		var infowindow = new naver.maps.InfoWindow();
+
+		function onSuccessGeolocation(position) {
+			var location = new naver.maps.LatLng(position.coords.latitude,
+												 position.coords.longitude);
+
+			map.setCenter(location); // 얻은 좌표를 지도의 중심으로 설정합니다.
+			map.setZoom(2); // 지도의 줌 레벨을 변경합니다.
+
+			infowindow.setContent('<div style="padding:5px;">' + '현재 위치' + '</div>');
+
+			infowindow.open(map, location);
+			console.log('Coordinates: ' + location.toString());
+		}
+
+		function onErrorGeolocation() {
+			var center = map.getCenter();
+
+			infowindow.setContent('<div style="padding:20px;">' +
+				'<h5 style="margin-bottom:5px;color:#f00;">Geolocation failed!</h5>'+ "latitude: "+ center.lat() +"<br />longitude: "+ center.lng() +'</div>');
+
+			infowindow.open(map, center);
+		}
+
+		$(window).on("load", function() {
+			if (navigator.geolocation) {
+				navigator.geolocation.getCurrentPosition(onSuccessGeolocation, onErrorGeolocation);
+			} else {
+				var center = map.getCenter();
+				infowindow.setContent('<div style="padding:20px;"><h5 style="margin-bottom:5px;color:#f00;">Geolocation not supported</h5></div>');
+				infowindow.open(map, center);
+			}
+		});
+
+		naver.maps.Event.addListener(map, 'mousedown', function(e) {
+			menuLayer.hide();
+		});
+		naver.maps.Event.addListener(map, 'rightclick', function(e) {
+			var coordHtml =
+				'Coord: '+ '(우 클릭 지점 위/경도 좌표)' + '<br />' +
+				'Point: ' + e.point + '<br />' +
+				'Offset: ' + e.offset;
+
+			menuLayer.show().css({
+				left: e.offset.x,
+				top: e.offset.y
+			}).html(coordHtml);
+
+			console.log('Coord: ' + e.coord.toString());
+		});
+
+		
+    </script>
+</body>
+</html>
