@@ -39,7 +39,7 @@
 			var lon = Number(jsonData["coord"]["lon"]);
 			//document.getElementById("lat").innerHTML = "위도: " + jsonData["coord"]["lat"] + "&deg;";
 			//document.getElementById("lon").innerHTML = "경도: " + jsonData["coord"]["lon"] + "&deg;";
-			document.getElementById("locationName").innerHTML = "지역명: " + jsonData["name"];
+			document.getElementById("locationName").innerHTML = jsonData["name"];
 			//document.getElementById("todaysWeather").innerHTML = "날씨: " + jsonData["weather"][0]["main"];
 			//document.getElementById("cloudiness").innerHTML = "흐린정도: " + jsonData["clouds"]["all"] + "%";
 			document.getElementById("temperature").innerHTML = "기온: " + jsonData["main"]["temp"] +"&deg;C";
